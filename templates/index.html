@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCANE — Autonomous Research Agent</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050508;
+    --bg2: #0a0a10;
+    --bg3: #0f0f18;
+    --border: #1a1a2e;
+    --border2: #252540;
+    --accent: #00ff88;
+    --accent2: #00ccff;
+    --accent3: #ff6b35;
+    --warn: #ffcc00;
+    --dim: #444466;
+    --text: #c8c8e8;
+    --text2: #8888aa;
+    --mono: 'Space Mono', monospace;
+    --display: 'Syne', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Scanline effect */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Animated grid bg */
+  .grid-bg {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+      linear-gradient(rgba(0,255,136,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,136,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* HEADER */
+  header {
+    padding: 40px 0 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 42px;
+    letter-spacing: -1px;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .logo span {
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,255,136,0.5);
+  }
+
+  .tagline {
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .badge {
+    font-size: 10px;
+    padding: 4px 10px;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .badge.free {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  header .inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  /* INPUT SECTION */
+  .input-section {
+    padding: 48px 0 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 20px;
+  }
+
+  .search-row {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .target-input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 18px;
+    padding: 16px 20px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .target-input::placeholder { color: var(--dim); }
+
+  .target-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 0 20px rgba(0,255,136,0.1);
+  }
+
+  .iter-select {
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 16px 20px;
+    outline: none;
+    cursor: pointer;
+    min-width: 160px;
+  }
+
+  .iter-select:focus { border-color: var(--accent); }
+
+  .run-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 16px 36px;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .run-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: rgba(255,255,255,0.2);
+    transition: left 0.3s;
+  }
+
+  .run-btn:hover::before { left: 100%; }
+  .run-btn:hover { box-shadow: 0 0 30px rgba(0,255,136,0.4); }
+  .run-btn:active { transform: scale(0.98); }
+  .run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .suggestions {
+    margin-top: 14px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .suggestion {
+    font-size: 11px;
+    padding: 5px 12px;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.5px;
+  }
+
+  .suggestion:hover {
+    border-color: var(--accent2);
+    color: var(--accent2);
+    background: rgba(0,204,255,0.05);
+  }
+
+  /* MAIN LAYOUT */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    min-height: 600px;
+  }
+
+  /* TERMINAL PANEL */
+  .terminal-panel {
+    border-right: 1px solid var(--border);
+    padding: 32px 0;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 0 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot.red { background: #ff5f57; }
+  .dot.yellow { background: #febc2e; }
+  .dot.green { background: #28c840; }
+
+  .panel-title {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-left: 4px;
+  }
+
+  .terminal-log {
+    height: 500px;
+    overflow-y: auto;
+    padding-right: 16px;
+    scroll-behavior: smooth;
+  }
+
+  .terminal-log::-webkit-scrollbar { width: 3px; }
+  .terminal-log::-webkit-scrollbar-track { background: transparent; }
+  .terminal-log::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  .log-line {
+    display: flex;
+    gap: 10px;
+    padding: 3px 0;
+    line-height: 1.6;
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .log-prefix { color: var(--dim); flex-shrink: 0; }
+  .log-text { color: var(--text); }
+  .log-text.accent { color: var(--accent); }
+  .log-text.accent2 { color: var(--accent2); }
+  .log-text.warn { color: var(--warn); }
+  .log-text.error { color: var(--accent3); }
+  .log-text.dim { color: var(--dim); }
+  .log-text.phase {
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .iter-banner {
+    background: linear-gradient(90deg, rgba(0,255,136,0.08), transparent);
+    border-left: 2px solid var(--accent);
+    padding: 8px 12px;
+    margin: 12px 0;
+    font-family: var(--display);
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 8px;
+    height: 14px;
+    background: var(--accent);
+    animation: blink 1s steps(1) infinite;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .idle-msg {
+    color: var(--dim);
+    font-size: 12px;
+    padding: 40px 0;
+    text-align: center;
+  }
+
+  /* REPORT PANEL */
+  .report-panel {
+    padding: 32px 0 32px 32px;
+  }
+
+  .report-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 500px;
+    color: var(--dim);
+    text-align: center;
+    gap: 16px;
+  }
+
+  .report-empty .big-icon {
+    font-size: 48px;
+    opacity: 0.3;
+  }
+
+  .report-empty p {
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    line-height: 2;
+  }
+
+  /* Report content */
+  .report-content {
+    display: none;
+    animation: reportReveal 0.6s ease;
+  }
+
+  @keyframes reportReveal {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .report-content.visible { display: block; }
+
+  .report-hero {
+    margin-bottom: 28px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .report-name {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 32px;
+    color: #fff;
+    line-height: 1;
+    letter-spacing: -0.5px;
+  }
+
+  .report-title {
+    font-size: 12px;
+    color: var(--accent2);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  .report-summary {
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.8;
+    font-family: var(--mono);
+  }
+
+  .confidence-bar {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .confidence-label {
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 3px;
+    background: var(--border2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 1s ease;
+    box-shadow: 0 0 10px rgba(0,255,136,0.5);
+  }
+
+  .confidence-value {
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .report-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-height: 420px;
+    overflow-y: auto;
+    padding-right: 8px;
+  }
+
+  .report-sections::-webkit-scrollbar { width: 3px; }
+  .report-sections::-webkit-scrollbar-thumb { background: var(--border2); }
+
+  .report-section {
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+    animation: fadeIn 0.3s ease both;
+  }
+
+  .section-title {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .section-body {
+    font-size: 12px;
+    color: var(--text2);
+    line-height: 1.8;
+  }
+
+  .section-body ul { list-style: none; }
+  .section-body li { padding: 2px 0; }
+  .section-body li::before { content: '→ '; color: var(--accent); }
+
+  .quote-item {
+    border-left: 2px solid var(--accent2);
+    padding-left: 12px;
+    color: var(--text);
+    font-style: italic;
+    margin: 4px 0;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border2);
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+
+  .stat-item {
+    flex: 1;
+    padding: 12px 16px;
+    border-right: 1px solid var(--border2);
+    text-align: center;
+  }
+
+  .stat-item:last-child { border-right: none; }
+
+  .stat-value {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: 22px;
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 9px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* Progress indicator */
+  .progress-ring {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  .iteration-dots {
+    display: flex;
+    gap: 6px;
+  }
+
+  .iter-dot {
+    width: 24px;
+    height: 6px;
+    background: var(--border2);
+    transition: all 0.3s;
+  }
+
+  .iter-dot.active { background: var(--accent); box-shadow: 0 0 8px rgba(0,255,136,0.5); }
+  .iter-dot.done { background: var(--dim); }
+
+  .progress-label {
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* Download btn */
+  .download-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .dl-btn {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+
+  .dl-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,255,136,0.05);
+  }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 20px 0;
+    margin-top: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  footer .left {
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 1px;
+  }
+
+  footer .right {
+    display: flex;
+    gap: 16px;
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-shadow: 0 0 8px rgba(0,255,136,0.5); }
+
+  /* Loading spinner */
+  .spinner {
+    display: inline-block;
+    width: 12px; height: 12px;
+    border: 2px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .main { grid-template-columns: 1fr; }
+    .terminal-panel { border-right: none; border-bottom: 1px solid var(--border); }
+    .report-panel { padding: 32px 0 0; }
+    .logo { font-size: 28px; }
+    .search-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <header>
+    <div class="inner">
+      <div>
+        <div class="logo">ARC<span>ANE</span></div>
+        <div class="tagline">Autonomous Research & Context Acquisition Network Engine</div>
+      </div>
+      <div class="header-right">
+        <div class="badge free">₹0 cost</div>
+        <div class="badge">Groq + DDG</div>
+        <div class="badge">OpenClaw-inspired</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- INPUT -->
+  <div class="input-section">
+    <div class="section-label">// Target Acquisition</div>
+    <div class="search-row">
+      <input
+        class="target-input"
+        type="text"
+        id="targetInput"
+        placeholder="Enter founder or CEO name..."
+        autocomplete="off"
+      />
+      <select class="iter-select" id="iterSelect">
+        <option value="2">2 iterations — fast</option>
+        <option value="3" selected>3 iterations — balanced</option>
+        <option value="4">4 iterations — deep</option>
+        <option value="5">5 iterations — thorough</option>
+      </select>
+      <button class="run-btn" id="runBtn" onclick="startResearch()">
+        DEPLOY →
+      </button>
+    </div>
+    <div class="suggestions">
+      <span class="section-label" style="margin:0;line-height:2">try:</span>
+      <span class="suggestion" onclick="fillTarget('Sam Altman')">Sam Altman</span>
+      <span class="suggestion" onclick="fillTarget('Jensen Huang')">Jensen Huang</span>
+      <span class="suggestion" onclick="fillTarget('Elon Musk')">Elon Musk</span>
+      <span class="suggestion" onclick="fillTarget('Sundar Pichai')">Sundar Pichai</span>
+      <span class="suggestion" onclick="fillTarget('Satya Nadella')">Satya Nadella</span>
+      <span class="suggestion" onclick="fillTarget('Brian Chesky')">Brian Chesky</span>
+    </div>
+  </div>
+
+  <!-- MAIN PANELS -->
+  <div class="main">
+
+    <!-- TERMINAL -->
+    <div class="terminal-panel">
+      <div class="panel-header">
+        <div class="dot red"></div>
+        <div class="dot yellow"></div>
+        <div class="dot green"></div>
+        <span class="panel-title">agent.log</span>
+      </div>
+      <div class="terminal-log" id="terminalLog">
+        <div class="idle-msg">
+          <div style="color:var(--accent);font-size:18px;margin-bottom:8px;">_</div>
+          Awaiting target acquisition.<br>
+          <span style="color:var(--dim)">Enter a name and deploy the agent.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORT -->
+    <div class="report-panel">
+      <div class="panel-header">
+        <div class="dot red"></div>
+        <div class="dot yellow"></div>
+        <div class="dot green"></div>
+        <span class="panel-title">intelligence_report.json</span>
+      </div>
+
+      <!-- Progress (shown while running) -->
+      <div class="progress-ring" id="progressRing" style="display:none">
+        <div class="iteration-dots" id="iterDots"></div>
+        <span class="progress-label" id="progressLabel">Initializing...</span>
+      </div>
+
+      <!-- Stats (shown after complete) -->
+      <div class="stats-bar" id="statsBar" style="display:none">
+        <div class="stat-item">
+          <div class="stat-value" id="statFacts">0</div>
+          <div class="stat-label">Facts</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="statUrls">0</div>
+          <div class="stat-label">Sources</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="statIter">0</div>
+          <div class="stat-label">Iterations</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="statConf">0</div>
+          <div class="stat-label">Confidence</div>
+        </div>
+      </div>
+
+      <div class="report-empty" id="reportEmpty">
+        <div class="big-icon">◈</div>
+        <p>Intelligence report will<br>appear here after research.</p>
+      </div>
+
+      <div class="report-content" id="reportContent">
+        <div class="report-hero">
+          <div class="report-name" id="repName">—</div>
+          <div class="report-title" id="repTitle">—</div>
+          <div class="report-summary" id="repSummary"></div>
+          <div class="confidence-bar">
+            <span class="confidence-label">Confidence</span>
+            <div class="bar-track"><div class="bar-fill" id="confBar" style="width:0%"></div></div>
+            <span class="confidence-value" id="confVal">0%</span>
+          </div>
+        </div>
+        <div class="report-sections" id="reportSections"></div>
+        <div class="download-row">
+          <button class="dl-btn" onclick="downloadJSON()">↓ JSON</button>
+          <button class="dl-btn" onclick="downloadMarkdown()">↓ Markdown</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="left">ARCANE v1.0 — OpenClaw-inspired autonomous research agent</div>
+    <div class="right">
+      <span>Groq llama-3.3-70b</span>
+      <span>•</span>
+      <span>DuckDuckGo</span>
+      <span>•</span>
+      <a href="https://github.com/Rohan29-De/AI-Agent" target="_blank">GitHub ↗</a>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+let currentReport = null;
+let currentJobId = null;
+let totalIterations = 3;
+
+function fillTarget(name) {
+  document.getElementById('targetInput').value = name;
+  document.getElementById('targetInput').focus();
+}
+
+function log(text, cls = '', prefix = '›') {
+  const log = document.getElementById('terminalLog');
+  const idle = log.querySelector('.idle-msg');
+  if (idle) idle.remove();
+
+  const line = document.createElement('div');
+  line.className = 'log-line';
+
+  const ts = new Date().toTimeString().slice(0,8);
+  line.innerHTML = `
+    <span class="log-prefix">[${ts}]</span>
+    <span class="log-prefix">${prefix}</span>
+    <span class="log-text ${cls}">${text}</span>
+  `;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+function logPhase(icon, name) {
+  const log = document.getElementById('terminalLog');
+  const div = document.createElement('div');
+  div.style.cssText = 'padding:10px 0 6px;border-top:1px solid var(--border);margin-top:6px;';
+  div.innerHTML = `<span style="color:#fff;font-weight:700;letter-spacing:2px;font-size:11px;text-transform:uppercase">${icon} ${name}</span>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function logIter(current, total) {
+  const log = document.getElementById('terminalLog');
+  const div = document.createElement('div');
+  div.className = 'iter-banner';
+  div.textContent = `ITERATION ${current} / ${total}`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+
+  // Update dots
+  updateIterDots(current, total);
+}
+
+function updateIterDots(current, total) {
+  const dots = document.getElementById('iterDots');
+  dots.innerHTML = '';
+  for (let i = 1; i <= total; i++) {
+    const d = document.createElement('div');
+    d.className = 'iter-dot' + (i < current ? ' done' : i === current ? ' active' : '');
+    dots.appendChild(d);
+  }
+  document.getElementById('progressLabel').textContent =
+    `Iteration ${current}/${total} running...`;
+}
+
+async function startResearch() {
+  const target = document.getElementById('targetInput').value.trim();
+  if (!target) {
+    document.getElementById('targetInput').focus();
+    return;
+  }
+
+  totalIterations = parseInt(document.getElementById('iterSelect').value);
+
+  // Reset UI
+  document.getElementById('terminalLog').innerHTML = '';
+  document.getElementById('reportContent').classList.remove('visible');
+  document.getElementById('reportEmpty').style.display = 'flex';
+  document.getElementById('statsBar').style.display = 'none';
+  document.getElementById('progressRing').style.display = 'flex';
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('runBtn').innerHTML = '<span class="spinner"></span>RUNNING';
+  currentReport = null;
+
+  // Init iter dots
+  const dots = document.getElementById('iterDots');
+  dots.innerHTML = '';
+  for (let i = 0; i < totalIterations; i++) {
+    const d = document.createElement('div');
+    d.className = 'iter-dot';
+    dots.appendChild(d);
+  }
+
+  log(`Target acquired: <strong style="color:#fff">${target}</strong>`, 'accent2', '⌖');
+  log(`Iterations: ${totalIterations} | Model: llama-3.3-70b`, 'dim', '○');
+
+  try {
+    const res = await fetch('/api/research', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({target, iterations: totalIterations})
+    });
+    const data = await res.json();
+    if (data.error) { log(`Error: ${data.error}`, 'error', '✗'); resetBtn(); return; }
+
+    currentJobId = data.job_id;
+    streamResults(data.job_id);
+  } catch (e) {
+    log(`Connection error: ${e.message}`, 'error', '✗');
+    resetBtn();
+  }
+}
+
+function streamResults(jobId) {
+  const es = new EventSource(`/api/stream/${jobId}`);
+
+  es.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    handleMessage(msg);
+    if (msg.type === 'done') {
+      es.close();
+      resetBtn();
+      document.getElementById('progressRing').style.display = 'none';
+    }
+  };
+
+  es.onerror = () => {
+    log('Stream disconnected', 'warn', '⚠');
+    es.close();
+    resetBtn();
+  };
+}
+
+function handleMessage(msg) {
+  const {type, data} = msg;
+  switch(type) {
+    case 'status':
+      log(data.message, 'accent', '▶'); break;
+    case 'iteration':
+      logIter(data.current, data.total); break;
+    case 'phase':
+      logPhase(data.icon, data.name); break;
+    case 'query':
+      log(data.text, 'dim', '?'); break;
+    case 'url_found':
+      log(data.title || data.url, 'text', '→'); break;
+    case 'facts_stored':
+      log(`Stored ${data.count} ${data.type} facts`, 'accent', '✓'); break;
+    case 'scraping':
+      log(data.url, 'dim', '⌛'); break;
+    case 'scraped':
+      log(`${data.chars.toLocaleString()} chars — ${data.title}`, 'accent2', '✓'); break;
+    case 'scrape_failed':
+      log(`Blocked (${data.reason}): ${data.url}`, 'dim', '✗'); break;
+    case 'facts_extracted':
+      log(`${data.count} facts extracted [relevance ${data.relevance}/10]`, 'accent', '◈'); break;
+    case 'stats':
+      log(`Facts: ${data.total_facts} | Scraped: ${data.urls_visited} | [${data.categories.join(', ')}]`, 'dim', '∑'); break;
+    case 'reflection':
+      if (data.continue) {
+        log(`Continue → gaps: ${data.gaps.join(', ') || 'none'}`, 'dim', '↺');
+      } else {
+        log(`Stopping early: ${data.reason}`, 'accent', '✓');
+      }
+      break;
+    case 'compiling':
+      log(`Synthesizing ${data.facts_count} facts into report...`, 'accent2', '◎'); break;
+    case 'complete':
+      renderReport(data.report);
+      log('Research complete. Report ready.', 'accent', '★');
+      break;
+    case 'error':
+      log(`Fatal: ${data.message}`, 'error', '✗'); break;
+  }
+}
+
+function renderReport(report) {
+  currentReport = report;
+  const meta = report.metadata || {};
+
+  // Stats bar
+  document.getElementById('statFacts').textContent = meta.total_facts || 0;
+  document.getElementById('statUrls').textContent = meta.urls_scraped || 0;
+  document.getElementById('statIter').textContent = meta.iterations_run || 0;
+  document.getElementById('statConf').textContent = (report.confidence_score || 0) + '%';
+  document.getElementById('statsBar').style.display = 'flex';
+
+  // Hero
+  document.getElementById('repName').textContent = report.name || 'Unknown';
+  document.getElementById('repTitle').textContent = report.title || '';
+  document.getElementById('repSummary').textContent = report.summary || '';
+
+  const conf = report.confidence_score || 0;
+  document.getElementById('confBar').style.width = conf + '%';
+  document.getElementById('confVal').textContent = conf + '%';
+
+  // Sections
+  const sections = report.sections || {};
+  const container = document.getElementById('reportSections');
+  container.innerHTML = '';
+
+  const sectionDefs = [
+    {key: 'early_life_education', label: 'Early Life & Education', icon: '🎓'},
+    {key: 'career_journey', label: 'Career Journey', icon: '💼'},
+    {key: 'entrepreneurial_ventures', label: 'Ventures', icon: '🚀'},
+    {key: 'key_achievements', label: 'Key Achievements', icon: '🏆', list: true},
+    {key: 'leadership_style', label: 'Leadership Style', icon: '🧭'},
+    {key: 'notable_quotes', label: 'Notable Quotes', icon: '💬', quotes: true},
+    {key: 'controversies_challenges', label: 'Controversies', icon: '⚡'},
+    {key: 'net_worth_financials', label: 'Financials', icon: '💰'},
+    {key: 'vision_philosophy', label: 'Vision & Philosophy', icon: '🔭'},
+  ];
+
+  sectionDefs.forEach(({key, label, icon, list, quotes}) => {
+    const val = sections[key];
+    if (!val || (Array.isArray(val) && val.length === 0)) return;
+
+    const div = document.createElement('div');
+    div.className = 'report-section';
+
+    let bodyHtml = '';
+    if (quotes && Array.isArray(val)) {
+      bodyHtml = val.map(q => `<div class="quote-item">"${q}"</div>`).join('');
+    } else if (list && Array.isArray(val)) {
+      bodyHtml = '<ul>' + val.map(i => `<li>${i}</li>`).join('') + '</ul>';
+    } else {
+      bodyHtml = `<p>${val}</p>`;
+    }
+
+    div.innerHTML = `
+      <div class="section-title">${icon} ${label}</div>
+      <div class="section-body">${bodyHtml}</div>
+    `;
+    container.appendChild(div);
+  });
+
+  // Show
+  document.getElementById('reportEmpty').style.display = 'none';
+  document.getElementById('reportContent').classList.add('visible');
+}
+
+function downloadJSON() {
+  if (!currentReport) return;
+  const blob = new Blob([JSON.stringify(currentReport, null, 2)], {type: 'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${currentReport.name || 'report'}_research.json`;
+  a.click();
+}
+
+function downloadMarkdown() {
+  if (!currentReport) return;
+  const r = currentReport;
+  const s = r.sections || {};
+  let md = `# ${r.name} — Research Report\n> **${r.title}**\n\n${r.summary}\n\n`;
+  md += `**Confidence:** ${r.confidence_score}/100\n\n---\n\n`;
+  const order = ['early_life_education','career_journey','entrepreneurial_ventures','key_achievements','leadership_style','notable_quotes','controversies_challenges','net_worth_financials','vision_philosophy'];
+  order.forEach(k => {
+    const v = s[k];
+    if (!v) return;
+    md += `## ${k.replace(/_/g,' ').toUpperCase()}\n\n`;
+    if (Array.isArray(v)) md += v.map(i => `- ${i}`).join('\n') + '\n\n';
+    else md += v + '\n\n';
+  });
+  const blob = new Blob([md], {type: 'text/markdown'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${r.name || 'report'}_research.md`;
+  a.click();
+}
+
+function resetBtn() {
+  const btn = document.getElementById('runBtn');
+  btn.disabled = false;
+  btn.innerHTML = 'DEPLOY →';
+}
+
+// Enter key support
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('targetInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') startResearch();
+  });
+});
+</script>
+</body>
+</html>
